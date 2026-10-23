@@ -1,145 +1,163 @@
-```vue
+
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
-defineProps({
+const props = defineProps({
     books: Object,
+    search: String,
 });
+
+// Menampilkan kata kunci pencarian sebelumnya
+const keyword = ref(props.search ?? '');
+
+// Fungsi pencarian buku
+function cari() {
+    router.get('/books', {
+        search: keyword.value
+    });
+}
+
+// Fungsi menghapus buku
+function hapus(id) {
+    if (confirm('Yakin ingin menghapus buku ini?')) {
+        router.delete(route('books.destroy', id));
+    }
+}
 </script>
 
 <template>
-    <Head title="Data Buku" />
-
     <AuthenticatedLayout>
-        <div class="min-h-screen bg-gray-100 px-6 py-8 sm:px-8">
+        <div class="p-6">
+            <h1 class="mb-4 text-2xl font-bold">Data Buku</h1>
 
-            <!-- Judul halaman -->
-            <div class="mb-6 flex flex-col gap-4 sm:flex-row
-                        sm:items-center sm:justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">
-                        Data Buku
-                    </h1>
+            <!-- Pesan berhasil -->
+            <div
+                v-if="$page.props.flash?.success"
+                class="mb-4 rounded bg-green-100 p-3 text-green-700"
+            >
+                {{ $page.props.flash.success }}
+            </div>
 
-                    <p class="mt-1 text-sm text-gray-500">
-                        Daftar buku yang tersedia di perpustakaan.
-                    </p>
-                </div>
-
-                <!-- Tombol tambah buku -->
+            <!-- Tombol tambah buku -->
+            <div class="mb-4">
                 <Link
                     href="/books/create"
-                    class="inline-flex items-center justify-center
-                           rounded-lg bg-blue-600 px-5 py-3
-                           text-sm font-semibold text-white
-                           shadow-sm transition hover:bg-blue-700"
+                    class="rounded bg-blue-600 px-4 py-2 text-white"
                 >
                     + Tambah Buku
                 </Link>
             </div>
 
-            <!-- Tabel data buku -->
-            <div class="overflow-hidden rounded-xl bg-white shadow-md">
+            <!-- Kotak pencarian -->
+            <div class="mb-4">
+                <input
+                    v-model="keyword"
+                    @keyup.enter="cari"
+                    type="text"
+                    placeholder="Cari judul atau pengarang..."
+                    class="w-full rounded border px-3 py-2"
+                />
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-gray-600">
-
-                        <thead class="bg-gray-800 text-xs uppercase
-                                      tracking-wider text-white">
-                            <tr>
-                                <th class="px-6 py-4">
-                                    No.
-                                </th>
-
-                                <th class="px-6 py-4">
-                                    Kode Buku
-                                </th>
-
-                                <th class="px-6 py-4">
-                                    Judul
-                                </th>
-
-                                <th class="px-6 py-4">
-                                    Pengarang
-                                </th>
-
-                                <th class="px-6 py-4 text-center">
-                                    Stok
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody class="divide-y divide-gray-200">
-
-                            <tr
-                                v-for="(book, index) in (books?.data ?? books ?? [])"
-                                :key="book.id"
-                                class="transition hover:bg-blue-50"
-                            >
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    {{ index + 1 }}
-                                </td>
-
-                                <td class="whitespace-nowrap px-6 py-4
-                                           font-medium text-gray-900">
-                                    {{ book.kode_buku }}
-                                </td>
-
-                                <td class="min-w-48 px-6 py-4
-                                           font-medium text-gray-800">
-                                    {{ book.judul }}
-                                </td>
-
-                                <td class="whitespace-nowrap px-6 py-4">
-                                    {{ book.pengarang }}
-                                </td>
-
-                                <td class="px-6 py-4 text-center">
-                                    <span
-                                        class="inline-flex min-w-10
-                                               justify-center rounded-full
-                                               bg-green-100 px-3 py-1
-                                               font-semibold text-green-700"
-                                    >
-                                        {{ book.stok }}
-                                    </span>
-                                </td>
-                            </tr>
-
-                            <!-- Jika belum ada data -->
-                            <tr v-if="!(books?.data ?? books ?? []).length">
-                                <td
-                                    colspan="5"
-                                    class="px-6 py-12 text-center"
-                                >
-                                    <p class="font-medium text-gray-700">
-                                        Belum ada data buku
-                                    </p>
-
-                                    <p class="mt-1 text-gray-500">
-                                        Silakan tambahkan buku terlebih dahulu.
-                                    </p>
-                                </td>
-                            </tr>
-
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Informasi jumlah buku -->
-                <div
-                    class="border-t border-gray-200 bg-gray-50
-                           px-6 py-4 text-sm text-gray-500"
+                <button
+                    @click="cari"
+                    type="button"
+                    class="mt-2 rounded bg-gray-700 px-4 py-2 text-white"
                 >
-                    Total buku:
-                    <span class="font-semibold text-gray-800">
-                        {{ (books?.data ?? books ?? []).length }}
-                    </span>
-                </div>
+                    Cari
+                </button>
+            </div>
 
+            <!-- Tabel data buku -->
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse border">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="border p-2">Kode</th>
+                            <th class="border p-2">Judul</th>
+                            <th class="border p-2">Pengarang</th>
+                            <th class="border p-2">Stok</th>
+                            <th class="border p-2">Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr
+                            v-for="book in props.books.data"
+                            :key="book.id"
+                        >
+                            <td class="border p-2">
+                                {{ book.kode_buku }}
+                            </td>
+
+                            <td class="border p-2">
+                                {{ book.judul }}
+                            </td>
+
+                            <td class="border p-2">
+                                {{ book.pengarang }}
+                            </td>
+
+                            <td class="border p-2">
+                                {{ book.stok }}
+                            </td>
+
+                            <td class="border p-2">
+                                <div class="flex gap-2">
+                                    <Link
+                                        :href="`/books/${book.id}/edit`"
+                                        class="rounded bg-yellow-500 px-3 py-1 text-white"
+                                    >
+                                        Edit
+                                    </Link>
+
+                                    <button
+                                        @click="hapus(book.id)"
+                                        type="button"
+                                        class="rounded bg-red-600 px-3 py-1 text-white"
+                                    >
+                                        Hapus
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr v-if="props.books.data.length === 0">
+                            <td
+                                colspan="5"
+                                class="border p-4 text-center"
+                            >
+                                Data buku tidak ditemukan.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Navigasi halaman -->
+            <div class="mt-4 flex flex-wrap gap-2">
+                <template
+                    v-for="(link, index) in props.books.links"
+                    :key="index"
+                >
+                    <Link
+                        v-if="link.url"
+                        :href="link.url"
+                        v-html="link.label"
+                        class="rounded border px-3 py-2"
+                        :class="{
+                            'bg-blue-600 text-white': link.active
+                        }"
+                    />
+
+                    <span
+                        v-else
+                        v-html="link.label"
+                        class="rounded border px-3 py-2 text-gray-400"
+                    />
+                </template>
             </div>
         </div>
     </AuthenticatedLayout>
 </template>
-```
